@@ -1,5 +1,6 @@
 plugins {
-    id 'java'
+    id 'java-library'
+    id 'maven-publish'
 }
 
 group = 'com.stupidcoder'
@@ -9,6 +10,10 @@ repositories {
     mavenCentral()
 }
 
+compileJava {
+    options.encoding = 'utf-8'
+}
+
 dependencies {
     testImplementation platform('org.junit:junit-bom:5.9.1')
     testImplementation 'org.junit.jupiter:junit-jupiter'
@@ -16,4 +21,18 @@ dependencies {
 
 test {
     useJUnitPlatform()
+}
+
+publishing {
+    publications {
+        myLib(MavenPublication) {
+            from components.java
+        }
+    }
+    repositories {
+        maven {
+            name = "MyRepo" //  optional target repository name
+            url = "file://C:\\Users\\stupid_coder_jyy\\Desktop\\cs\\mavenlocal"
+        }
+    }
 }
