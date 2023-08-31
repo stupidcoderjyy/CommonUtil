@@ -46,7 +46,7 @@ public abstract class AbstractDebugInput implements IInput{
         if (v > 127 || ASCII.isCtrl(b)) {
             res = "0x" + Integer.toHexString(v);
         } else {
-            res = "'" + (char)b + "'";
+            res = String.valueOf((char)b);
         }
         if (res.length() < 4) {
             res += " ".repeat(4 - res.length());

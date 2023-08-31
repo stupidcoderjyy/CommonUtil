@@ -19,6 +19,7 @@ public class BufferedInput extends AbstractDebugInput {
     private int forward;
     private int lexemeStart;
     private int fillCount;
+    private boolean ignoreLexemeLimit = false;
 
     public BufferedInput(IByteReader reader, int bufSize) {
         if (bufSize <= 0 || bufSize > MAX_BUFFER_SIZE) {
@@ -77,6 +78,10 @@ public class BufferedInput extends AbstractDebugInput {
         return new BufferedInput(new ConsoleByteReader());
     }
 
+    public void ignoreLexemeLengthLimit() {
+        this.ignoreLexemeLimit = true;
+    }
+
     @Override
     public boolean isOpen() {
         return buffer != null;
@@ -86,6 +91,9 @@ public class BufferedInput extends AbstractDebugInput {
     public boolean available() {
         if (!hasNext()) {
             return false;
+        }
+        if (ignoreLexemeLimit) {
+            return true;
         }
         if (lexemeStart <= forward) {
             return forward - lexemeStart < maxLexemeLen;
@@ -99,10 +107,14 @@ public class BufferedInput extends AbstractDebugInput {
         byte result = buffer[forward];
         forward++;
         if (forward == bufEndB) {
-            fill(0);
             forward = 0;
+            if (fillCount % 2 == 0) {
+                fill(0);
+            }
         } else if (forward == bufEndA) {
-            fill(bufEndA);
+            if (fillCount % 2 == 1) {
+                fill(bufEndA);
+            }
         }
         return result;
     }
@@ -158,26 +170,31 @@ public class BufferedInput extends AbstractDebugInput {
     @Override
     public void retract(int count) {
         checkOpen();
-        int res = forward - count;
-        if (res > 0) {
-            forward = res;
+        int tf = forward - count;
+        if (tf > 0) {
+            forward = tf;
             if (lexemeStart < bufEndA && lexemeStart >= forward) {
                 lexemeStart = forward - 1;
             }
         } else {
-            if (fillCount == 0) {
+            if (fillCount == 1) {
                 throw new InputException(this, "can not retract: buffer B not loaded");
             }
-            if (res < 0) {
-                res = bufEndB + res;
-                if (res <= bufEndA) {
+            if (fillCount % 2 == 0) { //已经加载了右侧的B
+                throw new InputException(this, "can not retract: exceed retract limit");
+            }
+            if (tf < 0) {
+                //从A退到B
+                tf = bufEndB + tf;
+                if (tf <= bufEndA) {
                     throw new InputException(this, "can not retract: exceed retract limit");
                 }
-                lexemeStart = lexemeStart > bufEndA ? Math.min(res, lexemeStart) : res;
+                lexemeStart = lexemeStart > bufEndA ? Math.min(tf, lexemeStart) : tf;
             } else if (lexemeStart < bufEndA) {
-               lexemeStart = 0;
+                //res为0
+                lexemeStart = 0;
             }
-            forward = res;
+            forward = tf;
         }
     }
 

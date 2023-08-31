@@ -9,11 +9,12 @@ public class InputDebugTest {
 
     @Test
     public void testBufferedInput() {
-        try(BufferedInput input = BufferedInput.fromResource("/test.txt")) {
+        try {
+            BufferedInput input = BufferedInput.fromResource("/input/test.txt");
             input.skip(10);
             throw new InputException(input);
         } catch (InputException e) {
-            e.printStackTrace();
+            e.printStackTraceAndClose();
         }
     }
 
