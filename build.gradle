@@ -1,10 +1,11 @@
 plugins {
     id 'java-library'
+    id 'java'
     id 'maven-publish'
 }
 
-group = 'com.stupidcoder'
-version = '1.0'
+group = 'stupidcoder'
+version = '1.0.1'
 
 repositories {
     mavenCentral()
@@ -23,16 +24,16 @@ test {
     useJUnitPlatform()
 }
 
+tasks.register('sourcesJar', Jar) {
+    from sourceSets.main.allJava
+    archiveClassifier = "sources"
+}
+
 publishing {
     publications {
         myLib(MavenPublication) {
             from components.java
-        }
-    }
-    repositories {
-        maven {
-            name = "MyRepo" //  optional target repository name
-            url = "file://C:\\Users\\stupid_coder_jyy\\Desktop\\cs\\mavenlocal"
+            artifact sourcesJar
         }
     }
 }

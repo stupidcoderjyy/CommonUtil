@@ -1,12 +1,9 @@
-package com.stupidcoder.util.input.readers;
+package stupidcoder.util.input.readers;
 
-import com.stupidcoder.util.input.IByteReader;
+import stupidcoder.util.input.IByteReader;
 
 import java.nio.charset.StandardCharsets;
 
-/**
- * @author stupid_coder_jyy
- */
 public class StringByteReader implements IByteReader {
     private byte[] bytes;
 

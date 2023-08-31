@@ -1,4 +1,4 @@
-package com.stupidcoder.util;
+package stupidcoder.util;
 
 import java.util.Arrays;
 import java.util.Collection;

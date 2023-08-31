@@ -1,4 +1,4 @@
-package com.stupidcoder.util.input;
+package stupidcoder.util.input;
 
 import java.io.Closeable;
 
@@ -79,7 +79,7 @@ public interface IInput extends Closeable {
                 //110x xxxx 10xx xxxx
                 int b2 = readUnsigned();
                 if ((b2 & 0xC0) != 0x80) {
-                    throw new InputException("malformed input:" + Integer.toBinaryString((b1 << 8) | b2));
+                    throw new InputException(this, "malformed input:" + Integer.toBinaryString((b1 << 8) | b2));
                 }
             }
             case 14 -> {
@@ -87,11 +87,11 @@ public interface IInput extends Closeable {
                 int b2 = readUnsigned();
                 int b3 = readUnsigned();
                 if ((b2 & 0xC0) != 0x80 || (b3 & 0xC0) != 0x80) {
-                    throw new InputException("malformed input:" +
+                    throw new InputException(this, "malformed input:" +
                             Integer.toBinaryString((b1 << 16) | (b2 << 8) | b3));
                 }
             }
-            default -> throw new InputException("malformed input:" + Integer.toBinaryString(b1));
+            default -> throw new InputException(this, "malformed input:" + Integer.toBinaryString(b1));
         }
         return lexeme();
     }
@@ -138,13 +138,13 @@ public interface IInput extends Closeable {
 
     default void checkOpen() {
         if (!isOpen()) {
-            throw new InputException("closed");
+            throw new InputException(this, "closed");
         }
     }
 
     default void checkAvailable() {
         if (!available()) {
-            throw new InputException("not available");
+            throw new InputException(this, "not available");
         }
     }
 }

@@ -1,6 +1,6 @@
-package com.stupidcoder.util.input.readers;
+package stupidcoder.util.input.readers;
 
-import com.stupidcoder.util.input.IByteReader;
+import stupidcoder.util.input.IByteReader;
 
 public class ConsoleByteReader implements IByteReader {
 

@@ -1,14 +1,14 @@
-package com.stupidcoder.util.input;
+package stupidcoder.util.input;
 
-import com.stupidcoder.util.input.readers.ConsoleByteReader;
-import com.stupidcoder.util.input.readers.FileByteReader;
+import stupidcoder.util.input.readers.ConsoleByteReader;
+import stupidcoder.util.input.readers.FileByteReader;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
-public class BufferedInput implements IInput {
+public class BufferedInput extends AbstractDebugInput {
     private static final int DEFAULT_BUFFER_SIZE = 2048;
     private static final int MAX_BUFFER_SIZE = 4096;
     private static final byte INPUT_END = -1;
@@ -45,7 +45,7 @@ public class BufferedInput implements IInput {
         try {
             return new BufferedInput(new FileByteReader(filePath), bufSize);
         } catch (FileNotFoundException e) {
-            throw new InputException(e);
+            throw new InputException(null, e);
         }
     }
 
@@ -61,7 +61,7 @@ public class BufferedInput implements IInput {
             }
             return new BufferedInput(new FileByteReader(stream), bufSize);
         } catch (FileNotFoundException e) {
-            throw new InputException(e);
+            throw new InputException(null, e);
         }
     }
 
@@ -166,12 +166,12 @@ public class BufferedInput implements IInput {
             }
         } else {
             if (fillCount == 0) {
-                throw new InputException("can not retract: buffer B not loaded");
+                throw new InputException(this, "can not retract: buffer B not loaded");
             }
             if (res < 0) {
                 res = bufEndB + res;
                 if (res <= bufEndA) {
-                    throw new InputException("can not retract: exceed retract limit");
+                    throw new InputException(this, "can not retract: exceed retract limit");
                 }
                 lexemeStart = lexemeStart > bufEndA ? Math.min(res, lexemeStart) : res;
             } else if (lexemeStart < bufEndA) {
@@ -187,7 +187,27 @@ public class BufferedInput implements IInput {
         try {
             reader.close();
         } catch (IOException e) {
-            throw new InputException(e);
+            throw new InputException(this, e);
         }
+    }
+
+    @Override
+    protected String type() {
+        return "BufferedInput(bufSize = " + bufEndA + ")";
+    }
+
+    @Override
+    protected void printData() {
+        System.err.println("    [A]");
+        printBuffer(buffer, 0, bufEndA);
+        System.err.println("    [B]");
+        printBuffer(buffer, bufEndA, bufEndB);
+    }
+
+    @Override
+    protected void printPos() {
+        printField("forward", forward);
+        printField("lexemeStart", lexemeStart);
+        printField("fillCount", fillCount);
     }
 }
