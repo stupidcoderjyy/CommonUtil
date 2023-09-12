@@ -4,11 +4,10 @@ import stupidcoder.util.input.readers.ConsoleByteReader;
 import stupidcoder.util.input.readers.FileByteReader;
 
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
-public class BufferedInput extends AbstractDebugInput {
+public class BufferedInput implements IInput {
     private static final int DEFAULT_BUFFER_SIZE = 2048;
     private static final int MAX_BUFFER_SIZE = 4096;
     private static final byte INPUT_END = -1;
@@ -178,16 +177,16 @@ public class BufferedInput extends AbstractDebugInput {
             }
         } else {
             if (fillCount == 1) {
-                throw new InputException(this, "can not retract: buffer B not loaded");
+                throw new InputException("can not retract: buffer B not loaded");
             }
             if (fillCount % 2 == 0) { //已经加载了右侧的B
-                throw new InputException(this, "can not retract: exceed retract limit");
+                throw new InputException("can not retract: exceed retract limit");
             }
             if (tf < 0) {
                 //从A退到B
                 tf = bufEndB + tf;
                 if (tf <= bufEndA) {
-                    throw new InputException(this, "can not retract: exceed retract limit");
+                    throw new InputException("can not retract: exceed retract limit");
                 }
                 lexemeStart = lexemeStart > bufEndA ? Math.min(tf, lexemeStart) : tf;
             } else if (lexemeStart < bufEndA) {
@@ -201,30 +200,6 @@ public class BufferedInput extends AbstractDebugInput {
     @Override
     public void close() {
         buffer = null;
-        try {
-            reader.close();
-        } catch (IOException e) {
-            throw new InputException(this, e);
-        }
-    }
-
-    @Override
-    protected String type() {
-        return "BufferedInput(bufSize = " + bufEndA + ")";
-    }
-
-    @Override
-    protected void printData() {
-        System.err.println("    [A]");
-        printBuffer(buffer, 0, bufEndA);
-        System.err.println("    [B]");
-        printBuffer(buffer, bufEndA, bufEndB);
-    }
-
-    @Override
-    protected void printPos() {
-        printField("forward", forward);
-        printField("lexemeStart", lexemeStart);
-        printField("fillCount", fillCount);
+        reader.close();
     }
 }

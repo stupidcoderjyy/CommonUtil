@@ -1,9 +1,8 @@
 package stupidcoder.util.input;
 
-import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 
-public class StringInput extends AbstractDebugInput {
+public class StringInput implements IInput {
     private byte[] data;
     private int forward;
     private int lexemeStart;
@@ -68,22 +67,5 @@ public class StringInput extends AbstractDebugInput {
     public void retract(int count) {
         forward = Math.max(0, forward - count);
         lexemeStart = Math.min(forward, lexemeStart);
-    }
-
-    @Override
-    protected String type() {
-        return "StringInput";
-    }
-
-    @Override
-    protected void printData() {
-        printBuffer(data, 0, data.length);
-    }
-
-    @Override
-    protected void printPos() {
-        PrintStream s = System.err;
-        s.println("forward = " + forward);
-        s.println("lexemeStart = " + lexemeStart);
     }
 }

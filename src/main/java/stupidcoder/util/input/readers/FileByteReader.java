@@ -25,14 +25,6 @@ public class FileByteReader implements IByteReader {
         }
     }
 
-    /**
-     * 从流中读取若干个字节，并装入一个字节数组中
-     *
-     * @param arr    待填充的字节数组
-     * @param offset 字节数组中的存放起点
-     * @param len    读取字节数
-     * @return 实际读取的字节个数
-     */
     @Override
     public int read(byte[] arr, int offset, int len) {
         try {
@@ -44,7 +36,11 @@ public class FileByteReader implements IByteReader {
     }
 
     @Override
-    public void close() throws IOException {
-        stream.close();
+    public void close() {
+        try {
+            stream.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

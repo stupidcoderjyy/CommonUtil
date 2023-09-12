@@ -1,18 +1,25 @@
 package stupidcoder.util;
 
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
+import java.util.List;
 import java.util.function.Supplier;
 
 public class ArrayUtil {
 
-    public static <T> void resize(Collection<T> c, int size, Supplier<T> defaultValue) {
+    public static <T> void resize(List<T> c, int size, Supplier<T> defaultValue) {
+        if (c instanceof ArrayList<T> l) {
+            l.ensureCapacity(size);
+        }
         for (int i = c.size() ; i < size ; i ++) {
             c.add(defaultValue.get());
         }
     }
 
-    public static <T> void resize(Collection<T> c, int size) {
+    public static <T> void resize(List<T> c, int size) {
+        if (c instanceof ArrayList<T> l) {
+            l.ensureCapacity(size);
+        }
         for (int i = c.size() ; i < size ; i ++) {
             c.add(null);
         }
