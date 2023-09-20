@@ -3,7 +3,7 @@ package stupidcoder.util.input;
 import java.nio.charset.StandardCharsets;
 
 public class StringInput implements IInput {
-    private byte[] data;
+    private final byte[] data;
     private int forward;
     private int lexemeStart;
 
@@ -16,11 +16,6 @@ public class StringInput implements IInput {
     @Override
     public boolean isOpen() {
         return data != null;
-    }
-
-    @Override
-    public void close() {
-        data = null;
     }
 
     @Override
@@ -47,25 +42,28 @@ public class StringInput implements IInput {
     }
 
     @Override
-    public int readUnsigned() {
-        return read() & 0xFF;
-    }
-
-    @Override
     public boolean hasNext() {
         return forward < data.length;
     }
 
     @Override
     public String lexeme() {
-        String str = new String(data, lexemeStart, forward - lexemeStart);
+        String str = new String(data, lexemeStart, forward - lexemeStart, StandardCharsets.UTF_8);
         lexemeStart = forward;
         return str;
     }
 
     @Override
-    public void retract(int count) {
-        forward = Math.max(0, forward - count);
+    public byte[] bytesLexeme() {
+        byte[] res = new byte[forward - lexemeStart];
+        System.arraycopy(data, lexemeStart, res, 0, res.length);
+        return res;
+    }
+
+    @Override
+    public int retract() {
+        forward = Math.max(0, forward - 1);
         lexemeStart = Math.min(forward, lexemeStart);
+        return data[forward];
     }
 }

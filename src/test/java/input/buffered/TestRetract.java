@@ -1,4 +1,4 @@
-package input;
+package input.buffered;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -8,24 +8,24 @@ import stupidcoder.util.input.InputException;
 
 import java.lang.reflect.Field;
 
-public class BufferedInputTest {
+public class TestRetract {
     @Test
     public void testBARetract() {
-            BufferedInput input = BufferedInput.fromResource("/input/test.txt", 16);
-            input.ignoreLexemeLengthLimit();
-            input.skip(17);
-            input.retract(2);
-            input.skip(2);
-            int fillCount = getFillCount(input);
-            int res = input.read();
-            Assertions.assertEquals(2, fillCount);
-            Assertions.assertEquals('8', (char) res);
+        BufferedInput input = BufferedInput.fromResource("/buffered/test_retract.txt", 16);
+        input.ignoreLexemeLengthLimit();
+        input.skip(17);
+        input.retract(2);
+        input.skip(2);
+        int fillCount = getFillCount(input);
+        int res = input.read();
+        Assertions.assertEquals(2, fillCount);
+        Assertions.assertEquals('8', (char) res);
     }
 
     @Test
     public void testABRetract1() {
         try {
-            BufferedInput input = BufferedInput.fromResource("/input/test.txt", 16);
+            BufferedInput input = BufferedInput.fromResource("/buffered/test_retract.txt", 16);
             input.ignoreLexemeLengthLimit();
             input.skip(2);
             input.retract(4);
@@ -37,7 +37,7 @@ public class BufferedInputTest {
 
     @Test
     public void testABRetract2() {
-        BufferedInput input = BufferedInput.fromResource("/input/test.txt", 16);
+        BufferedInput input = BufferedInput.fromResource("/buffered/test_retract.txt", 16);
         input.ignoreLexemeLengthLimit();
         input.skip(32);
         input.retract(2);
@@ -51,14 +51,21 @@ public class BufferedInputTest {
     @Test
     public void testABRetract3() {
         try {
-            BufferedInput input = BufferedInput.fromResource("/input/test.txt", 16);
+            BufferedInput input = BufferedInput.fromResource("/buffered/test_retract.txt", 2);
             input.ignoreLexemeLengthLimit();
-            input.skip(32);
+            input.skip(4);
             input.retract(100);
             throw new RuntimeException("failed to throw an error");
         } catch (InputException ignored) {
 
         }
+    }
+
+    @Test
+    public void testRetract() {
+        BufferedInput input = BufferedInput.fromResource("/buffered/test_retract.txt");
+        input.skip(4);
+        Assertions.assertEquals('3', input.retract(2));
     }
 
     private static int getForward(BufferedInput input) {
