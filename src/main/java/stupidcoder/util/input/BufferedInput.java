@@ -6,19 +6,19 @@ import stupidcoder.util.input.readers.FileByteReader;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayDeque;
+import java.util.Deque;
 
-public class BufferedInput extends ComplexInput {
+public class BufferedInput implements IInput, AutoCloseable {
     private static final int DEFAULT_BUFFER_SIZE = 2048;
     private static final int MAX_BUFFER_SIZE = 4096;
-    private final int bufEndA, bufEndB;
-    private final int maxLexemeLen;
-    private int inputEnd = -1;
     private final IByteReader reader;
-    private byte[] buffer;
-    private int forward;
-    private int lexemeStart;
-    private int fillCount;
-    private boolean ignoreLexemeLimit = false;
+    protected final int bufEndA, bufEndB;
+    protected Deque<Integer> marks;
+    protected int inputEnd = -1;
+    protected byte[] buffer;
+    protected int forward;
+    protected int fillCount;
 
     public BufferedInput(IByteReader reader, int bufSize) {
         if (bufSize <= 0 || bufSize > MAX_BUFFER_SIZE) {
@@ -29,12 +29,16 @@ public class BufferedInput extends ComplexInput {
         }
         this.buffer = new byte[bufSize * 2];
         this.forward = 0;
-        this.lexemeStart = 0;
         this.reader = reader;
         this.bufEndA = bufSize;
         this.bufEndB = bufSize * 2;
-        this.maxLexemeLen = bufSize;
-        fill(0);
+        init();
+    }
+
+    protected void init() {
+        marks = new ArrayDeque<>();
+        fillA();
+        mark();
     }
 
     public BufferedInput(IByteReader reader) {
@@ -77,10 +81,6 @@ public class BufferedInput extends ComplexInput {
         return new BufferedInput(new ConsoleByteReader());
     }
 
-    public void ignoreLexemeLengthLimit() {
-        this.ignoreLexemeLimit = true;
-    }
-
     @Override
     public boolean isOpen() {
         return buffer != null;
@@ -88,16 +88,11 @@ public class BufferedInput extends ComplexInput {
 
     @Override
     public boolean available() {
-        if (!hasNext()) {
-            return false;
+        checkOpen();
+        if (inputEnd > 0) {
+            return forward != inputEnd;
         }
-        if (ignoreLexemeLimit) {
-            return true;
-        }
-        if (lexemeStart <= forward) {
-            return forward - lexemeStart < maxLexemeLen;
-        }
-        return forward + bufEndB - lexemeStart < maxLexemeLen;
+        return true;
     }
 
     @Override
@@ -107,18 +102,13 @@ public class BufferedInput extends ComplexInput {
         forward++;
         if (forward == bufEndB) {
             forward = 0;
-            if (fillCount % 2 == 0) {
-                fill(0);
+            if ((fillCount & 1) == 0) {
+                fillA();
             }
         } else if (forward == bufEndA) {
-            if (fillCount % 2 == 1) {
-                fill(bufEndA);
+            if ((fillCount & 1) == 1) {
+                fillB();
             }
-        }
-        switch (result) {
-            case '\n' -> newLine();
-            case '\r' -> {}
-            default -> move();
         }
         return result;
     }
@@ -130,53 +120,63 @@ public class BufferedInput extends ComplexInput {
         }
     }
 
-    private void fill(int begin) {
+    @Override
+    public void mark() {
+        marks.addFirst(forward);
+    }
+
+    @Override
+    public void removeMark() {
+        marks.pollFirst();
+    }
+
+    @Override
+    public void recover(boolean consume) {
+        if (!marks.isEmpty()) {
+            forward = consume ? marks.pollFirst() : marks.getFirst();
+        }
+    }
+
+    protected void fillA() {
         fillCount++;
-        int size = reader.read(buffer, begin, bufEndA);
+        int size = reader.read(buffer, 0, bufEndA);
         if (size < bufEndA) {
-            inputEnd = begin + size;
+            inputEnd = size;
+        }
+        while (!marks.isEmpty() && marks.getLast() < bufEndA) {
+            marks.removeLast();
+        }
+    }
+
+    protected void fillB() {
+        fillCount++;
+        int size = reader.read(buffer, bufEndA, bufEndA);
+        if (size < bufEndA) {
+            inputEnd = bufEndA + size;
+        }
+        while (!marks.isEmpty() && marks.getLast() >= bufEndA) {
+            marks.removeLast();
         }
     }
 
     @Override
-    public boolean hasNext() {
-        if (inputEnd > 0) {
-            return forward != inputEnd;
-        }
-        return true;
-    }
-
-    @Override
-    public String lexeme() {
+    public String capture() {
         checkOpen();
-        final int start = lexemeStart;
-        lexemeStart = forward;
-        return lexeme(start, forward);
-    }
-
-    @Override
-    public byte[] bytesLexeme() {
-        final int start = lexemeStart;
-        lexemeStart = forward;
-        byte[] res;
-        if (start < forward) {
-            res = new byte[forward - start];
-            System.arraycopy(buffer, start, res, 0, res.length);
-        } else if (start > forward){
-            int lenB = bufEndB - start;
-            int lenA = forward;
-            res = new byte[lenB + lenA];
-            System.arraycopy(buffer, start, res, 0, lenB);
-            System.arraycopy(buffer, 0, res, lenB, lenA);
-        } else {
-            res = new byte[0];
-        }
-        return res;
-    }
-
-    @Override
-    public void markLexemeStart() {
-        lexemeStart = forward;
+        return switch (marks.size()) {
+            case 1 -> {
+                int start = marks.getFirst();
+                removeMark();
+                yield capture(forward, start);
+            }
+            case 0 -> "";
+            default -> {
+                int end = marks.getFirst();
+                removeMark();
+                int start = marks.getFirst();
+                removeMark();
+                yield capture(end, start);
+            }
+        };
     }
 
     @Override
@@ -187,28 +187,15 @@ public class BufferedInput extends ComplexInput {
                 throw new InputException("exceed retract limit");
             }
             forward = bufEndB - 1;
-            if (lexemeStart == 0) {
-                lexemeStart = forward;
-            }
         } else if (forward == bufEndA) {
             if ((fillCount & 1) == 1) {
                 throw new InputException("exceed retract limit");
             }
             forward--;
-            lexemeStart = Math.min(lexemeStart, forward);
         } else {
-            if (lexemeStart == forward) {
-                lexemeStart--;
-            }
             forward--;
         }
-        int b = buffer[forward];
-        switch (b) {
-            case '\r' -> {}
-            case '\n' -> row--;
-            default -> column--;
-        }
-        return b;
+        return buffer[forward];
     }
 
     @Override
@@ -217,24 +204,7 @@ public class BufferedInput extends ComplexInput {
         reader.close();
     }
 
-    @Override
-    public String currentLine() {
-        int start = forward - column;
-        int end = forward;
-        if (start < 0) {
-            start = Math.max(bufEndA, bufEndB + start);
-        }
-        if (buffer[forward] == '\n') {
-            start--;
-            end--;
-            if (end < 0) {
-                end = bufEndB - 1;
-            }
-        }
-        return lexeme(start, end);
-    }
-
-    private String lexeme(int start, int end) {
+    String capture(int end, int start) {
         if (start < end) {
             return new String(buffer, start, end - start, StandardCharsets.UTF_8);
         } else if (start > end){
@@ -245,5 +215,36 @@ public class BufferedInput extends ComplexInput {
             return new String(temp, StandardCharsets.UTF_8);
         }
         return "";
+    }
+
+    /**
+     * 不断读取字符，直到下一个字符为目标字符
+     * @param ch 目标字符
+     */
+    public void approach(int ch) {
+        while (buffer[forward] != ch && available()) {
+            read();
+        }
+    }
+
+    /**
+     * 不断读取字符，直到下一个字符为目标字符之一
+     * @param clazz 目标字符集合
+     * @return 即将遇到的目标字符
+     */
+    public int approach(BitClass clazz) {
+        while (clazz.accept(buffer[forward]) && available()) {
+            read();
+        }
+        return buffer[forward];
+    }
+
+    /**
+     * 不断读取字符，直到下一个字符为目标字符之一
+     * @param chs 目标字符
+     * @return 即将遇到的目标字符
+     */
+    public int approach(int ... chs) {
+        return approach(BitClass.of(chs));
     }
 }

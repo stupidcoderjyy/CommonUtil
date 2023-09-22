@@ -3,8 +3,17 @@ package stupidcoder.util.input;
 import java.nio.charset.StandardCharsets;
 
 public interface IInput {
+
+    /**
+     * 输入系统是否启动
+     * @return 启动返回true
+     */
     boolean isOpen();
 
+    /**
+     * 是否可以继续读取
+     * @return 可以读取返回true
+     */
     boolean available();
 
     /**
@@ -14,27 +23,49 @@ public interface IInput {
      */
     int read();
 
+    /**
+     * 跳过若干字节
+     * @param count 跳过的字节数
+     */
     void skip(int count);
 
+    /**
+     * 读取一个无符号字节
+     * @return 无符号字节
+     */
     default int readUnsigned() {
         return read() & 0xFF;
     }
 
-    boolean hasNext();
+    /**
+     * 为输入系统添加一个位置标记。无效的标记会被自动清楚
+     */
+    void mark();
 
     /**
-     * 获取一段字节，调用{@link IInput#markLexemeStart()}标记起点
+     * 移除最近添加的位置标记
+     */
+    void removeMark();
+
+    /**
+     * 将输入系统的位置恢复到最近添加的位置标记处，并移除标记
+     */
+    default void recover() {
+        recover(false);
+    }
+
+    /**
+     * 将输入系统的位置恢复到最近添加的位置标记处
+     * @param consume 是否移除标记，移除传入true
+     */
+    void recover(boolean consume);
+
+    /**
+     * 截取一段字节。若存在两个有效的标记，则截取这两个标记之间的内容；若存在一个有效的标记，则截取从标记到当前位置的内容。
+     * 如果不存在有效的标记，则返回一个非空的值
      * @return 字节组成的UTF-8字符串
      */
-    String lexeme();
-
-    /**
-     * 获取一段字节，调用{@link IInput#markLexemeStart()}标记起点
-     * @return 字节数组
-     */
-    byte[] bytesLexeme();
-
-    void markLexemeStart();
+    String capture();
 
     /**
      * 回退一个字节
@@ -43,6 +74,11 @@ public interface IInput {
      */
     int retract();
 
+    /**
+     * 回退若干字节
+     * @return 回退过程中经过的最后一个字节（调用{@link IInput#read()}后得到的字节）
+     * @throws InputException 回退失败
+     */
     default int retract(int count) {
         if (count <= 0) {
             return -1;
@@ -54,6 +90,10 @@ public interface IInput {
         return retract();
     }
 
+    /**
+     * 读取一个UTF字符
+     * @return UTF字符
+     */
     default String readUtfChar() {
         byte[] data;
         int b1 = readUnsigned();
@@ -82,35 +122,10 @@ public interface IInput {
         return new String(data, StandardCharsets.UTF_8);
     }
 
-    default void skipSpaceAndTab() {
-        int nb;
-        while (available()) {
-            nb = read();
-            if (nb != ' ' && nb != '\t') {
-                retract();
-                markLexemeStart();
-                return;
-            }
-        }
-    }
-
-    default void skipSpaceTabLineBreak(){
-        int nb;
-        while (available()) {
-            nb = read();
-            if (nb == '\r') {
-                read();
-                continue;
-            }
-
-            if (nb != ' ' && nb != '\t') {
-                retract();
-                markLexemeStart();
-                return;
-            }
-        }
-    }
-
+    /**
+     * 不断读取字符，直到遇见目标字符或无法继续读取
+     * @param ch 目标字符
+     */
     default void find(int ch) {
         while (available()) {
             if (read() == ch) {
@@ -120,7 +135,7 @@ public interface IInput {
     }
 
     /**
-     * 不断读取字符，直到遇到目标字符
+     * 不断读取字符，直到遇见目标字符或无法继续读取
      * @param chs 目标字符，位于[0, 128)外的会被忽略
      * @return 找到的那个字符，没找到返回-1
      */
@@ -132,7 +147,11 @@ public interface IInput {
         return find(clazz);
     }
 
-
+    /**
+     * 不断读取字符，直到遇见目标字符或无法继续读取
+     * @param clazz 字符集合
+     * @return 找到的那个字符，没找到返回-1
+     */
     default int find(BitClass clazz) {
         while (available()) {
             int b = read();

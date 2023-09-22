@@ -17,7 +17,6 @@ $4$
     private final List<Boolean> accepted = new ArrayList<>();
     private final List<int[]> goTo = new ArrayList<>();
     private final List<String> tokens = new ArrayList<>();
-
 $$
 %%
     private final IDfaSetter setter;

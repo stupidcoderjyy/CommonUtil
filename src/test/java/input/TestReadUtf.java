@@ -11,6 +11,6 @@ public class TestReadUtf {
         StringInput input = new StringInput("你好");
         Assertions.assertEquals("你", input.readUtfChar());
         Assertions.assertEquals("好", input.readUtfChar());
-        Assertions.assertEquals("你好", input.lexeme());
+        Assertions.assertEquals("你好", input.capture());
     }
 }

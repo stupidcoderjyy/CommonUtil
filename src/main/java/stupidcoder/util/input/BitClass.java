@@ -22,7 +22,7 @@ public class BitClass {
         data[b] = true;
     }
 
-    boolean accept(int b) {
+    public boolean accept(int b) {
         b &= 0xFF;
         if (b > 127) {
             return false;

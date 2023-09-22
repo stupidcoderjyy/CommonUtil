@@ -3,22 +3,16 @@ package stupidcoder.util.input;
 import java.io.PrintStream;
 
 public class CompileException extends Exception{
-    private final int line;
+    private final int row;
     private int start, end;
-    private final String content;
+    private String line;
     private final String filePath;
 
-    public CompileException(int line, String content, String filePath) {
-        this.line = line;
-        this.content = content;
+    public CompileException(String msg, int row, String line, String filePath) {
+        super(msg);
+        this.row = row;
         this.filePath = filePath;
-    }
-
-    public CompileException(String message, int line, String content, String filePath) {
-        super(message);
         this.line = line;
-        this.content = content;
-        this.filePath = filePath;
     }
 
     public CompileException setPos(int column) {
@@ -36,9 +30,8 @@ public class CompileException extends Exception{
     @Override
     public void printStackTrace(PrintStream s) {
         s.print(filePath);
-        s.print(" [" + line + ":" + start + "]:" + getMessage());
-        s.println();
-        s.println("    " + content);
+        s.println(":" + row + ":" + start + ":" + getMessage());
+        s.println("    " + line);
         s.println(" ".repeat(start + 4) + "^".repeat(end - start + 1));
     }
 }
