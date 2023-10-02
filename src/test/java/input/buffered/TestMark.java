@@ -10,9 +10,9 @@ public class TestMark {
     @Test
     public void test_basic() {
         BufferedInput input = new BufferedInput(new StringByteReader("0123456789ABCDEF"));
-        input.skip(2);
+        input.read(2);
         input.mark();
-        input.skip(1);
+        input.read(1);
         input.mark();
         Assertions.assertEquals("2", input.capture());
         input.close();
@@ -21,7 +21,7 @@ public class TestMark {
     @Test
     public void test_remove_a() {
         BufferedInput input = new BufferedInput(new StringByteReader("0123ABCD0123"), 4);
-        input.skip(1);
+        input.read(1);
         input.mark();
         input.find('2');
         input.read();   //加载B

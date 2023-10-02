@@ -30,6 +30,13 @@ public class TestError {
         } catch (Exception e) {
             e.printStackTrace();
         }
+
+        try (CompilerInput input = CompilerInput.fromResource("/input/compile/test_error.txt")) {
+            input.approach('#');
+            throw input.errorAtForward("test error:#");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @Test

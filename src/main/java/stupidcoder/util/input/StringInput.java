@@ -32,9 +32,13 @@ public class StringInput implements IInput {
     }
 
     @Override
-    public void skip(int count) {
-        forward += count;
+    public int read(int count) {
+        if (count <= 0) {
+            throw new IllegalArgumentException("read count should be positive:" + count);
+        }
+        forward += count - 1;
         checkAvailable();
+        return data[forward++];
     }
 
     @Override

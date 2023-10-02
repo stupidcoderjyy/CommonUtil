@@ -23,7 +23,7 @@ public class CompilerInput extends BufferedInput {
     private Deque<int[]> markData;
     private int[] tempData;
 
-    private CompilerInput(IByteReader reader, String filePath) {
+    public CompilerInput(IByteReader reader, String filePath) {
         super(reader);
         this.filePath = filePath;
     }
@@ -222,7 +222,7 @@ public class CompilerInput extends BufferedInput {
      */
     public CompileException errorAtMark(String msg) {
         if (marks.isEmpty()) {
-            return pointError(msg, forward);
+            return errorAtForward(msg);
         }
         return pointError(msg, popMark()[1]);
     }
@@ -233,7 +233,7 @@ public class CompilerInput extends BufferedInput {
      * @return 得到的异常
      */
     public CompileException errorAtForward(String msg) {
-        return pointError(msg, forward);
+        return pointError(msg, column);
     }
 
     /**
@@ -264,7 +264,7 @@ public class CompilerInput extends BufferedInput {
         if (marks.isEmpty()) {
             return errorAtForward(msg);
         }
-        return rangedError(msg, forward, popMark()[1]);
+        return rangedError(msg, column, popMark()[1]);
     }
 
 

@@ -24,10 +24,21 @@ public interface IInput {
     int read();
 
     /**
-     * 跳过若干字节
+     * 连续读取若干字节
      * @param count 跳过的字节数
+     * @return 最后读取的字节
+     * @throws InputException 在无法读取或者词素长度超过限制时抛出
+     * @throws IllegalArgumentException count不为正时抛出
      */
-    void skip(int count);
+    default int read(int count) {
+        if (count <= 0) {
+            throw new IllegalArgumentException("count should be positive:" + count);
+        }
+        for (int i = 0 ; i < count - 1 ; i++) {
+            read();
+        }
+        return read();
+    }
 
     /**
      * 读取一个无符号字节
@@ -140,11 +151,7 @@ public interface IInput {
      * @return 找到的那个字符，没找到返回-1
      */
     default int find(int ... chs) {
-        BitClass clazz = new BitClass();
-        for (int ch : chs) {
-            clazz.add(ch);
-        }
-        return find(clazz);
+        return find(BitClass.of(chs));
     }
 
     /**
@@ -160,6 +167,53 @@ public interface IInput {
             }
         }
         return -1;
+    }
+
+    /**
+     * 不断读取字符，直到遇见非目标字符或无法继续读取
+     * @param ch – 目标字符
+     * @return 最后跳过的字符，没找到返回-1
+     */
+    default int skip(int ch) {
+        int pre = -1;
+        while (available()) {
+            int b = read();
+            if (b == ch) {
+                pre = b;
+                continue;
+            }
+            retract();
+            break;
+        }
+        return pre;
+    }
+
+    /**
+     * 不断读取字符，直到遇见非目标字符或无法继续读取
+     * @param chs 目标字符，位于[0, 128)外的会被忽略
+     * @return 最后跳过的字符，没找到返回-1
+     */
+    default int skip(int ... chs) {
+        return skip(BitClass.of(chs));
+    }
+
+    /**
+     * 不断读取字符，直到遇见非目标字符或无法继续读取
+     * @param clazz 字符集合
+     * @return 最后跳过的字符，没找到返回-1
+     */
+    default int skip(BitClass clazz) {
+        int pre = -1;
+        while (available()) {
+            int b = read();
+            if (clazz.accept(b)) {
+                pre = b;
+                continue;
+            }
+            retract();
+            break;
+        }
+        return pre;
     }
 
     default void checkOpen() {

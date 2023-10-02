@@ -89,10 +89,10 @@ public class BufferedInput implements IInput, AutoCloseable {
     @Override
     public boolean available() {
         checkOpen();
-        if (inputEnd > 0) {
-            return forward != inputEnd;
+        if (inputEnd < 0) {
+            return true;
         }
-        return true;
+        return forward != inputEnd;
     }
 
     @Override
@@ -111,13 +111,6 @@ public class BufferedInput implements IInput, AutoCloseable {
             }
         }
         return result;
-    }
-
-    @Override
-    public void skip(int count) {
-        for (int i = 0 ; i < count ; i ++) {
-            read();
-        }
     }
 
     @Override
@@ -220,11 +213,16 @@ public class BufferedInput implements IInput, AutoCloseable {
     /**
      * 不断读取字符，直到下一个字符为目标字符
      * @param ch 目标字符
+     * @return 即将遇到的目标字符
      */
-    public void approach(int ch) {
-        while (buffer[forward] != ch && available()) {
+    public int approach(int ch) {
+        while (available()) {
+            if (buffer[forward] == ch) {
+                return ch;
+            }
             read();
         }
+        return -1;
     }
 
     /**
@@ -233,10 +231,13 @@ public class BufferedInput implements IInput, AutoCloseable {
      * @return 即将遇到的目标字符
      */
     public int approach(BitClass clazz) {
-        while (clazz.accept(buffer[forward]) && available()) {
+        while (available()) {
+            if (clazz.accept(buffer[forward])) {
+                return buffer[forward];
+            }
             read();
         }
-        return buffer[forward];
+        return -1;
     }
 
     /**
