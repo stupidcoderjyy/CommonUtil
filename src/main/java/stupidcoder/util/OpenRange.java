@@ -110,24 +110,26 @@ public class OpenRange {
         }
 
         int resetId;
-        if (pairsLeft.size() > 1) {
-            if (lPos + 1 > pairsLeft.size() - 1) {
-                //没有东西给你修改
-                resetId = -1;
-            } else {
-                if (lPos >= 0 && rPos >= 0 && rPos - lPos == 1) {
-                    /*
-                       p           [+++]
-                       r    [++++]       [+++++]
-                    */
-                    insertPair(lPos + 1, left, right);
+        if (lPos + 1 > pairsLeft.size() - 1) {
+            //没有东西给你修改
+            resetId = -1;
+        } else {
+            if (lPos < 0) {
+                if (rPos == 0) {
+                    insertPair(0, left, right);
                     return this;
                 }
-                resetId = lPos < 0 ? 0 : lPos + 1;
+            } else if (rPos >= 0 && rPos - lPos == 1) {
+                /*
+                   p           [+++]
+                   r    [++++]       [+++++]
+                */
+                insertPair(lPos + 1, left, right);
+                return this;
             }
-        } else {
-            resetId = Math.max(lPos, 0);
+            resetId = lPos < 0 ? 0 : lPos + 1;
         }
+
         int removeR = rPos < 0 ? pairsLeft.size() - 1 : rPos - 1;
         if (resetId == -1) {
             appendPair(left, right);
