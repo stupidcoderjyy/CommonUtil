@@ -1,4 +1,6 @@
-package stupidcoder.util;
+package stupidcoder.util.arrcompressor;
+
+import stupidcoder.util.ArrayUtil;
 
 import java.util.ArrayList;
 import java.util.List;

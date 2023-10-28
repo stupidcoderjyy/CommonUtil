@@ -137,12 +137,13 @@ public interface IInput {
      * 不断读取字符，直到遇见目标字符或无法继续读取
      * @param ch 目标字符
      */
-    default void find(int ch) {
+    default int find(int ch) {
         while (available()) {
             if (read() == ch) {
-                break;
+                return ch;
             }
         }
+        return -1;
     }
 
     /**

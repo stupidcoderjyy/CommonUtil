@@ -248,4 +248,11 @@ public class BufferedInput implements IInput, AutoCloseable {
     public int approach(int ... chs) {
         return approach(BitClass.of(chs));
     }
+
+    /**
+     * 跳过本行剩余内容
+     */
+    public final void skipLine() {
+        find('\n');
+    }
 }

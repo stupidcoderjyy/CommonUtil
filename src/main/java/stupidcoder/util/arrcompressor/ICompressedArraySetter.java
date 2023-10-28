@@ -1,4 +1,4 @@
-package stupidcoder.util;
+package stupidcoder.util.arrcompressor;
 
 public interface ICompressedArraySetter {
     void setData(int i, String val);

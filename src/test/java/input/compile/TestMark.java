@@ -30,4 +30,18 @@ public class TestMark {
         Deque<Object[]> markData = ReflectionUtil.getObjectField(input, "markData");
         Assertions.assertTrue(markData.isEmpty());
     }
+
+    @Test
+    public void test3() {
+        CompilerInput input = CompilerInput.fromResource("/input/compile/test_mark_2.txt");
+        for (int i = 0; i < 31 ; i ++) {
+            input.read();
+            input.mark();
+        }
+        long l = System.currentTimeMillis();
+        input.mark();
+        System.out.println(System.currentTimeMillis() - l);
+        input.removeMark();
+        input.close();
+    }
 }

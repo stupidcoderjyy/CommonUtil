@@ -1,5 +1,6 @@
 package stupidcoder.util.input;
 
+import stupidcoder.util.input.readers.ConsoleByteReader;
 import stupidcoder.util.input.readers.FileByteReader;
 
 import java.io.FileNotFoundException;
@@ -8,6 +9,12 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 
 public class CompilerInput extends BufferedInput {
+    private static final int RESERVED_SIZE = 32;
+    private static final int MARK_LEN = 5;
+    private static int[][] reservedMarks = new int[RESERVED_SIZE][MARK_LEN];
+    private static final Deque<int[]> removed = new ArrayDeque<>(RESERVED_SIZE);
+    private static int mPos = 0;
+
     private int row = 0;
     private int column = 0;
     private final String filePath;
@@ -21,7 +28,6 @@ public class CompilerInput extends BufferedInput {
         [4]forward
      */
     private Deque<int[]> markData;
-    private int[] tempData;
 
     public CompilerInput(IByteReader reader, String filePath) {
         super(reader);
@@ -37,7 +43,7 @@ public class CompilerInput extends BufferedInput {
         try {
             return new CompilerInput(new FileByteReader(filePath), filePath, bufSize);
         } catch (FileNotFoundException e) {
-            throw new InputException(e.toString());
+            throw new InputException(e.getMessage());
         }
     }
 
@@ -45,7 +51,7 @@ public class CompilerInput extends BufferedInput {
         try {
             return new CompilerInput(new FileByteReader(filePath), filePath);
         } catch (FileNotFoundException e) {
-            throw new InputException(e.toString());
+            throw new InputException(e.getMessage());
         }
     }
 
@@ -57,7 +63,7 @@ public class CompilerInput extends BufferedInput {
             }
             return new CompilerInput(new FileByteReader(stream), filePath, bufSize);
         } catch (FileNotFoundException e) {
-            throw new InputException(e.toString());
+            throw new InputException(e.getMessage());
         }
     }
 
@@ -69,8 +75,12 @@ public class CompilerInput extends BufferedInput {
             }
             return new CompilerInput(new FileByteReader(stream), filePath);
         } catch (FileNotFoundException e) {
-            throw new InputException(e.toString());
+            throw new InputException(e.getMessage());
         }
+    }
+
+    public static CompilerInput fromConsole() {
+        return new CompilerInput(new ConsoleByteReader(), "~", 128);
     }
 
     @Override
@@ -99,7 +109,7 @@ public class CompilerInput extends BufferedInput {
     @Override
     public int retract() {
         if (!markData.isEmpty() && markData.getFirst()[4] == forward) {
-            markData.removeFirst();
+            removeFirstMark();
         }
         int b = super.retract();
         switch (b) {
@@ -145,7 +155,7 @@ public class CompilerInput extends BufferedInput {
             columnSizes.removeLast();
         }
         while (!markData.isEmpty() && markData.getLast()[4] < bufEndA) {
-            markData.removeLast();
+            removeLastMark();
         }
     }
 
@@ -157,7 +167,7 @@ public class CompilerInput extends BufferedInput {
             columnSizes.removeLast();
         }
         while (!markData.isEmpty() && markData.getLast()[4] >= bufEndA) {
-            markData.removeLast();
+            removeLastMark();
         }
     }
 
@@ -171,13 +181,13 @@ public class CompilerInput extends BufferedInput {
     }
 
     private int[] getData() {
-        return new int[]{
-                row,
-                Math.max(0, column),
-                columnSizes.isEmpty() ? -1 : columnSizes.getFirst(),
-                rowBegin.getFirst(),
-                forward
-        };
+        int[] data = offerMark();
+        data[0] = row;
+        data[1] = Math.max(0, column);
+        data[2] = columnSizes.isEmpty() ? -1 : columnSizes.getFirst();
+        data[3] = rowBegin.getFirst();
+        data[4] = forward;
+        return data;
     }
 
     /**
@@ -186,7 +196,7 @@ public class CompilerInput extends BufferedInput {
     @Override
     public void removeMark() {
         marks.pollFirst();
-        markData.removeFirst();
+        removeFirstMark();
     }
 
     /**
@@ -197,7 +207,7 @@ public class CompilerInput extends BufferedInput {
     public void recover(boolean consume) {
         super.recover(consume);
         if (!markData.isEmpty()) {
-            int[] data = consume ? markData.pollFirst() : markData.getFirst();
+            int[] data = consume ? removeFirstMark() : markData.getFirst();
             row = data[0];
             column = data[1];
             int cs = data[2];
@@ -215,6 +225,16 @@ public class CompilerInput extends BufferedInput {
         }
     }
 
+    private int[] removeFirstMark() {
+        int[] m = markData.removeFirst();
+        removed.push(m);
+        return m;
+    }
+
+    private void removeLastMark() {
+        removed.push(markData.removeLast());
+    }
+
     /**
      * 得到一个编译错误异常，错误指向最近一个标记，如果没有标记则指向forward
      * @param msg 错误提示
@@ -224,7 +244,7 @@ public class CompilerInput extends BufferedInput {
         if (marks.isEmpty()) {
             return errorAtForward(msg);
         }
-        return pointError(msg, popMark()[1]);
+        return pointError(msg, popAndRecover()[1]);
     }
 
     /**
@@ -245,11 +265,11 @@ public class CompilerInput extends BufferedInput {
         return switch (marks.size()) {
             case 0 -> errorAtForward(msg);
             case 1 -> errorMarkToForward(msg);
-            default -> rangedError(msg, popMark()[1], popMark()[1]);
+            default -> rangedError(msg, popAndRecover()[1], popAndRecover()[1]);
         };
     }
 
-    private int[] popMark() {
+    private int[] popAndRecover() {
         int[] data = markData.getFirst();
         recover(true);
         return data;
@@ -264,15 +284,15 @@ public class CompilerInput extends BufferedInput {
         if (marks.isEmpty()) {
             return errorAtForward(msg);
         }
-        return rangedError(msg, column, popMark()[1]);
+        return rangedError(msg, column, popAndRecover()[1]);
     }
 
+    public final int column() {
+        return column;
+    }
 
-    /**
-     * 跳过本行剩余内容
-     */
-    public final void skipLine() {
-        find('\n');
+    public final int row() {
+        return row;
     }
 
     private CompileException pointError(String msg, int pos) {
@@ -282,5 +302,16 @@ public class CompilerInput extends BufferedInput {
     private CompileException rangedError(String msg, int end, int start) {
         return new CompileException(msg, row, getFullLine(), filePath)
                 .setPos(start, Math.max(start, end));
+    }
+
+    private static int[] offerMark() {
+        if (removed.isEmpty()) {
+            if (mPos == RESERVED_SIZE) {
+                reservedMarks = new int[RESERVED_SIZE][MARK_LEN];
+                mPos = 0;
+            }
+            return reservedMarks[mPos++];
+        }
+        return removed.pop();
     }
 }

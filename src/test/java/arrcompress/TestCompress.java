@@ -2,8 +2,8 @@ package arrcompress;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import stupidcoder.util.ArrayCompressor;
-import stupidcoder.util.ICompressedArraySetter;
+import stupidcoder.util.arrcompressor.ArrayCompressor;
+import stupidcoder.util.arrcompressor.ICompressedArraySetter;
 
 public class TestCompress implements ICompressedArraySetter {
     private String[] data;
