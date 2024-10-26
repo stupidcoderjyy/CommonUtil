@@ -52,7 +52,7 @@ public class ParserUnit implements Parser {
             default -> throw input.errorAtForward("unexpected symbol");
         }
         OutUnit unit = parser.parse(g, input, null);
-        unit.src = src;
+        unit.setSrc(src);
         checkNext(input, '}');
         return unit;
     }

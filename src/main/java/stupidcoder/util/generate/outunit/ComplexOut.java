@@ -1,7 +1,6 @@
 package stupidcoder.util.generate.outunit;
 
 import stupidcoder.util.generate.OutUnit;
-import stupidcoder.util.generate.Source;
 import stupidcoder.util.input.BufferedInput;
 
 import java.io.FileWriter;
@@ -25,10 +24,11 @@ public class ComplexOut extends OutUnit {
     @Override
     public void writeAll(FileWriter writer, BufferedInput parentSrc) throws Exception {
         initConfig();
-        boolean nativeSrc = src != Source.EMPTY;
-        BufferedInput srcIn = nativeSrc ? new BufferedInput(src) : parentSrc;
+        if (input == null) {
+            input = nativeSrc ? new BufferedInput(src) : parentSrc;
+        }
         boolean hasLb = lineBreaks > 0;
-        for (int i = 0 ; shouldRepeat(i, srcIn) ; i ++) {
+        for (int i = 0 ; shouldRepeat(i, input) ; i ++) {
             for (int id = 0; id < units.size(); id++) {
                 List<OutUnit> lineUnits = this.units.get(id);
                 if (lineUnits.isEmpty()) {
@@ -38,7 +38,7 @@ public class ComplexOut extends OutUnit {
                     writer.write("    ".repeat(indents));
                 }
                 for (OutUnit u : lineUnits) {
-                    u.writeAll(writer, srcIn);
+                    u.writeAll(writer, input);
                 }
                 if (hasLb && !overrideMap[LINEBREAK][id]) {
                     writer.write("\r\n");
@@ -48,10 +48,12 @@ public class ComplexOut extends OutUnit {
                 writer.write("\r\n".repeat(lineBreaks - 1));
             }
         }
-        if (nativeSrc) {
-            srcIn.close();
-            src.destroy();
-        }
+    }
+
+    @Override
+    public void close() {
+        units.forEach(list -> list.forEach(OutUnit::close));
+        super.close();
     }
 
     @Override
@@ -67,8 +69,8 @@ public class ComplexOut extends OutUnit {
                 continue;
             }
             OutUnit u = units.get(0);
-            overrideMap[INDENT][i] = u.indents >= 0;
-            overrideMap[LINEBREAK][i] = u.lineBreaks >= 0;
+            overrideMap[INDENT][i] = u.indents() >= 0;
+            overrideMap[LINEBREAK][i] = u.lineBreaks() >= 0;
         }
     }
 

@@ -16,7 +16,7 @@ public class Generator {
     protected static final Map<String, Parser> DEFAULT_UNIT_PARSERS = new HashMap<>();
     protected final Map<String, Source> sources = new HashMap<>();
     protected final Map<String, Parser> customUnitParsers = new HashMap<>();
-    protected final Generator parent;
+    protected Generator parent;
 
     static {
         DEFAULT_UNIT_PARSERS.put("f", InternalParsers.UNIT_FORMAT);
@@ -39,6 +39,10 @@ public class Generator {
         this(null);
     }
 
+    public void setParent(Generator parent) {
+        this.parent = parent;
+    }
+
     public void registerParser(String name, Parser parser) {
         customUnitParsers.put(name, parser);
     }
@@ -53,8 +57,7 @@ public class Generator {
              FileWriter writer = new FileWriter(Config.outputPath(targetFile), StandardCharsets.UTF_8)){
             loadScript(input, writer);
         } catch (Exception e) {
-            System.err.println("failed to output file:" + targetFile);
-            e.printStackTrace();
+            System.err.println("failed to output file:" + targetFile + "(" + e.getMessage() + ")");
         }
         sources.forEach((name, src) -> src.destroy());
     }
@@ -73,9 +76,9 @@ public class Generator {
                 case '$' -> {
                     input.retract();
                     input.removeMark();
-                    InternalParsers.UNIT
-                            .parse(this, input, null)
-                            .writeAll(writer, null);
+                    OutUnit unit = InternalParsers.UNIT.parse(this, input, null);
+                    unit.writeAll(writer, null);
+                    unit.close();
                     input.skipLine();
                 }
                 case '\r' -> {

@@ -12,8 +12,8 @@ public abstract class Source implements IByteReader {
 
     public abstract void lock();
 
-    protected void reset() {
-        throw new UnsupportedOperationException();
+    protected void recall() {
+        throw new UnsupportedOperationException("cannot recall disposable sources:" + this);
     }
 
     public void destroy() {
@@ -22,7 +22,7 @@ public abstract class Source implements IByteReader {
 
     @Override
     public String toString() {
-        return name;
+        return name + "(" + getClass().getSimpleName() + ")";
     }
 
     public static Source EMPTY = new Source("") {

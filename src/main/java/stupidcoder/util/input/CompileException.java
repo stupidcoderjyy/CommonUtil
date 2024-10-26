@@ -5,7 +5,7 @@ import java.io.PrintStream;
 public class CompileException extends Exception{
     private final int row;
     private int start, end;
-    private String line;
+    private final String line;
     private final String filePath;
 
     public CompileException(String msg, int row, String line, String filePath) {

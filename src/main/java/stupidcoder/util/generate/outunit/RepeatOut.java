@@ -25,8 +25,14 @@ public class RepeatOut extends OutUnit {
     }
 
     @Override
-    public void writeContentOnce(FileWriter writer, BufferedInput srcIn) throws Exception {
-        int count = readInt(srcIn);
+    public void writeContentOnce(FileWriter writer, BufferedInput srcIn) {
+
+    }
+
+    @Override
+    protected void writeContents(FileWriter writer) throws Exception {
+        //RepeatOut配置无效
+        int count = readInt(input);
         if (count > MAX_REPEAT) {
             System.err.printf("repeat times too large:0x%s (MAX = %d)%n", Integer.toHexString(count), MAX_REPEAT);
             return;
@@ -34,17 +40,17 @@ public class RepeatOut extends OutUnit {
         check();
         switch (count) {
             case 0 -> {}
-            case 1 -> writeOnce(writer, srcIn, singlePrefix.value, singlePostFix.value);
+            case 1 -> writeOnce(writer, input, singlePrefix.value, singlePostFix.value);
             default -> {
-                writeOnce(writer, srcIn, firstPrefix.value, firstPostfix.value);
+                writeOnce(writer, input, firstPrefix.value, firstPostfix.value);
                 for (int i = 1 ; i < count - 1 ; i ++) {
-                    writeOnce(writer, srcIn, prefix.value, postfix.value);
+                    writeOnce(writer, input, prefix.value, postfix.value);
                 }
-                writeOnce(writer, srcIn, lastPrefix.value, lastPostfix.value);
+                writeOnce(writer, input, lastPrefix.value, lastPostfix.value);
             }
         }
     }
-    
+
     private void writeOnce(FileWriter writer, BufferedInput srcIn, OutUnit aPrefix, OutUnit aPostfix) throws Exception {
         if (aPrefix != null) {
             aPrefix.writeAll(writer, srcIn);
@@ -74,6 +80,12 @@ public class RepeatOut extends OutUnit {
         if (singlePrefix.value == null) {
             singlePrefix.value = prefix.value;
         }
+    }
+
+    @Override
+    public void close() {
+        super.close();
+        unit.close();
     }
 
     @Override

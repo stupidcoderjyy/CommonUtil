@@ -12,13 +12,14 @@ public class SourceCached extends Source {
     private static final String CACHE_DIR;
     private static final int DATA_SIZE_THRESHOLD = 128;
     private static final Pattern NAME_PATTERN = Pattern.compile("[_a-z][_a-zA-Z0-9]*");
+    private final int id;
     private byte[] data;
     private int count;
     private BufferedOutputStream cacheOut;
     private BufferedInputStream cacheIn;
     private boolean useCache;
     protected boolean locked;
-    private final int id;
+    protected boolean destroyed;
 
     static {
         CACHE_DIR = Config.tempOutPath("source-caches");
@@ -50,6 +51,7 @@ public class SourceCached extends Source {
                 for (byte b : bs) {
                     cacheOut.write(b);
                 }
+                count += 4;
             } else {
                 int c = 0;
                 while (c < 4) {
@@ -76,8 +78,8 @@ public class SourceCached extends Source {
                 cacheOut.write(temp, 0, temp.length);
             } else {
                 System.arraycopy(temp, 0, data, count, temp.length);
-                count += temp.length;
             }
+            count += temp.length;
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -90,8 +92,8 @@ public class SourceCached extends Source {
                 cacheOut.write(b);
             } else {
                 data[count] =(byte) b;
-                count++;
             }
+            count++;
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -153,8 +155,9 @@ public class SourceCached extends Source {
     }
 
     @Override
-    public void close() {
+    public void destroy() {
         try {
+            destroyed = true;
             data = null;
             if (cacheIn != null) {
                 cacheIn.close();
@@ -169,11 +172,24 @@ public class SourceCached extends Source {
         }
     }
 
+    @Override
+    public void close() {
+        //Generator调用destroy进行资源释放
+    }
+
+    @Override
+    protected void recall() {
+        ensureState(true);
+    }
+
     private String getCacheFileName() {
         return CACHE_DIR + "/" + name + "$" + id + ".cache";
     }
 
     protected void ensureState(boolean locked) {
+        if (destroyed) {
+            throw new IllegalStateException("destroyed");
+        }
         if (this.locked != locked) {
             if (locked) {
                 throw new IllegalStateException("source still open");

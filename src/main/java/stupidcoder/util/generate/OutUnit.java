@@ -7,33 +7,53 @@ import java.util.HashMap;
 import java.util.Map;
 
 public abstract class OutUnit {
-    public Source src = Source.EMPTY;
+    protected Source src = Source.EMPTY;
     public final Map<String, OutUnitField> fields = new HashMap<>();
-    public int lineBreaks = -1;
-    public int indents = -1;
-    public int repeat = -1;
+    protected int lineBreaks = -1;
+    protected int indents = -1;
+    protected int repeat = -1;
+    protected boolean nativeSrc;
+    protected BufferedInput input;
 
     public abstract void writeContentOnce(FileWriter writer, BufferedInput srcIn) throws Exception;
+
+    public void setSrc(Source src) {
+        this.src = src;
+        this.nativeSrc = src != Source.EMPTY;
+    }
+
+    public Source getSrc() {
+        return src;
+    }
 
     public void writeAll(FileWriter writer, BufferedInput parentSrc) throws Exception{
         try {
             initConfig();
-            boolean nativeSrc = src != Source.EMPTY;
             if (nativeSrc && src.used) {
-                src.reset();
+                src.recall();
             }
-            BufferedInput srcIn = nativeSrc ? new BufferedInput(src) : parentSrc;
-            for (int i = 0; shouldRepeat(i, srcIn) ; i++) {
-                writer.write("    ".repeat(indents));
-                writeContentOnce(writer, srcIn);
-                writer.write("\r\n".repeat(lineBreaks));
+            if (input == null) {
+                input = nativeSrc ? new BufferedInput(src) : parentSrc;
             }
-            if (nativeSrc) {
-                srcIn.close();
-            }
+            writeContents(writer);
         } catch (Exception e) {
+            e.printStackTrace();
             System.err.println("OutUnit:{" + this + "}, Source: " + (src == Source.EMPTY ? "NULL" : src));
-            throw new RuntimeException(e.getMessage());
+            throw new RuntimeException();
+        }
+    }
+
+    protected void writeContents(FileWriter writer) throws Exception{
+        for (int i = 0; shouldRepeat(i, input) ; i++) {
+            writer.write("    ".repeat(indents));
+            writeContentOnce(writer, input);
+            writer.write("\r\n".repeat(lineBreaks));
+        }
+    }
+
+    public void close() {
+        if (input != null) {
+            input.close();
         }
     }
 
@@ -62,5 +82,29 @@ public abstract class OutUnit {
         if (repeat < 0) {
             repeat = 1;
         }
+    }
+
+    public void setLineBreaks(int lineBreaks) {
+        this.lineBreaks = lineBreaks;
+    }
+
+    public void setIndents(int indents) {
+        this.indents = indents;
+    }
+
+    public void setRepeat(int repeat) {
+        this.repeat = repeat;
+    }
+
+    public int lineBreaks() {
+        return lineBreaks;
+    }
+
+    public int indents() {
+        return indents;
+    }
+
+    public int repeat() {
+        return repeat;
     }
 }

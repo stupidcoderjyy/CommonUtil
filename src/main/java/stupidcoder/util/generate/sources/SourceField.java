@@ -17,36 +17,32 @@ public abstract class SourceField<T> extends Source {
 
     protected abstract int getSize(T val);
 
-    protected byte[] getBytes() {
-        return new byte[size];
-    }
-
     protected abstract void writeBytes(T val);
 
     @Override
     public void lock() {
-        T v = supplier.get();
-        size = getSize(v);
-        data = getBytes();
-        if (data == null) {
-            throw new NullPointerException("null data");
-        }
-        if (size < 0) {
-            throw new IllegalStateException("minus size");
-        }
-        writeBytes(v);
+        initData();
     }
 
     @Override
-    protected void reset() {
+    protected void recall() {
         pos = 0;
-        used = false;
-        lock();
+        initData();
+    }
+
+    private void initData() {
+        T v = supplier.get();
+        size = getSize(v);
+        data = new byte[size];
+        writeBytes(v);
     }
 
     @Override
     public int read(byte[] arr, int offset, int len) {
         used = true;
+        if (pos == size) {
+            pos = 0;
+        }
         int actualLen = Math.min(len, size - pos);
         if (actualLen == 0) {
             return 0;
@@ -58,13 +54,10 @@ public abstract class SourceField<T> extends Source {
 
     @Override
     public void close() {
-        data = null;
     }
 
     @Override
     public void destroy() {
-        data = null;
-        supplier = null;
     }
 
     protected final void writeInt(int v, int start) {

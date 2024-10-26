@@ -38,6 +38,6 @@ public class FormatOut extends OutUnit {
 
     @Override
     public String toString() {
-        return "Format{fmt:" + fmt + ", args:" + Arrays.toString(args) + "}";
+        return "Format{fmt:\"" + fmt + "\", args:" + Arrays.toString(args) + "}";
     }
 }

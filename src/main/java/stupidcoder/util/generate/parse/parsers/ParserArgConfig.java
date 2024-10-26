@@ -14,15 +14,15 @@ public class ParserArgConfig implements Parser {
             switch (b) {
                 case 'L', 'l' -> {
                     String v = readIntString(input);
-                    raw.lineBreaks = v.isEmpty() ? 1 : Integer.parseInt(v);
+                    raw.setLineBreaks(v.isEmpty() ? 1 : Integer.parseInt(v));
                 }
                 case 'R', 'r' -> {
                     String v = readIntString(input);
-                    raw.repeat = v.isEmpty() ? Integer.MAX_VALUE : Integer.parseInt(v);
+                    raw.setRepeat(v.isEmpty() ? Integer.MAX_VALUE : Integer.parseInt(v));
                 }
                 case 'I', 'i' -> {
                     String v = readIntString(input);
-                    raw.indents = v.isEmpty() ? 1 :Integer.parseInt(v);
+                    raw.setIndents(v.isEmpty() ? 1 :Integer.parseInt(v));
                 }
                 case '}', ',' -> {
                     input.retract();
